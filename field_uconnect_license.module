@@ -1,0 +1,290 @@
+<?php
+/**
+ * @file
+ * Provide UCARConnect controlled vocabulary terms
+ */
+/**
+ * Implements hook_views_api().
+ */
+function field_uconnect_license_views_api() {
+	return array(
+		'api' => 3,
+		'path' => drupal_get_path('module', 'field_uconnect_license') . '/views',
+	);
+}
+
+/**
+ * Implements hook_theme().
+ */
+function field_uconnect_license_theme() {
+	return array(
+		'field_uconnect_license_json' => array('variables' => array(
+				'element' => NULL,
+				'field' => NULL
+			), ),
+		'field_uconnect_license_default' => array('variables' => array(
+				'element' => NULL,
+				'field' => NULL
+			), ),
+	);
+}
+
+/**
+ * Implements hook_field_info().
+ */
+function field_uconnect_license_field_info() {
+	return array('field_uconnect_license' => array(
+			'label' => t('UCARConnect License'),
+			'description' => t('This field stores the resource license information for the UCARConnect repository and represents the specific type of rights license associated with the resource, specifying intellectual property rights and terms of use, reuse, and access'),
+			'settings' => array(),
+			'instance_settings' => array(
+				'field_uconnect_license_name' => '',
+				'field_uconnect_license_url' => '',
+				'field_uconnect_license_explanation' => '',
+				'field_uconnect_license_properties_1' => array(),
+				'field_uconnect_license_properties_2' => array(),
+				'field_uconnect_license_properties_3' => array(),
+				'field_uconnect_license_properties_4' => array(),
+				'field_uconnect_license_properties_5' => array(),
+			),
+			'default_widget' => 'field_uconnect_license_simple',
+			'default_formatter' => 'field_uconnect_license_default',
+		), );
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function field_uconnect_license_field_is_empty($item, $field) {
+	if ($field['type'] == 'field_uconnect_license') {
+		if (empty($item['field_uconnect_license_name'])) {
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function field_uconnect_license_field_widget_info() {
+	return array('field_uconnect_license_simple' => array(
+			'label' => t('License Fields'),
+			'description' => t('Allow user to enter each data point separately'),
+			'field types' => array('field_uconnect_license'),
+			'behaviors' => array(
+				'multiple values' => FIELD_BEHAVIOR_DEFAULT,
+				'default values' => FIELD_BEHAVIOR_DEFAULT,
+			),
+		), );
+}
+
+function field_uconnect_license_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+	$base = $element;
+	$element['#type'] = 'fieldset';
+
+	if ($instance['widget']['type'] == 'field_uconnect_license_simple') {
+		$element['field_uconnect_license_name'] = array(
+			'#type' => 'textfield',
+			'#title' => t('License Name'),
+			'#description' => t('The name of the rights license associated with the resource. Do not enter text indicating that the license is unknown. Read through the information at the resource URL and either choose one of the license names, type in the name of a license which is not yet on the list, or indicate that the resource does not specify its rights licensing.'),
+			'#required' => TRUE,
+			'#weight' => 1,
+			'#default_value' => isset($items[$delta]['field_uconnect_license_name']) ? $items[$delta]['field_uconnect_license_name'] : NULL,
+		) + $base;
+
+		$element['field_uconnect_license_url'] = array(
+			'#type' => 'textfield',
+			'#title' => t('License URL'),	
+			'#description' => t('The web location of the resource\'s rights license'),		
+			'#weight' => 2,
+			'#default_value' => isset($items[$delta]['field_uconnect_license_url']) ? $items[$delta]['field_uconnect_license_url'] : NULL,
+		) + $base;
+
+		$element['field_uconnect_license_explanation'] = array(
+			'#type' => 'textfield',
+			'#title' => t('License Explanation'),
+			'#description' => t('Supplemental information about the license type(s) and/or property type(s) selected. Use this field to add justification for the license or property types selected, to give additional information when the type does not fit within the controlled vocabulary, or to further explain a resource\'s lack of licensing information. Do not use this field for the copyright statement.'),
+			'#weight' => 3,
+			'#default_value' => isset($items[$delta]['field_uconnect_license_explanation']) ? $items[$delta]['field_uconnect_license_explanation'] : NULL,
+		) + $base;
+
+		for ($index = 1; $index <= 5; $index++) {
+			$element['field_uconnect_license_properties_' . $index] = array(
+				//TODO select field of options from schema to only be predefined values
+				'#type' => 'select',
+				'#options' => _field_uconnect_license_properties_options_list(),
+				'#title' => t('License Property ' . $index),
+				'#description' => t('The characteristics of terms of use, access, and reuse for the resource\'s intellectual property. Do not indicate that the license is unknown without thoroughly investigating the resource\'s website. Please include at least one property.'),
+				'#weight' => $index+5,
+				'#default_value' => isset($items[$delta]['field_uconnect_license_properties_' . $index]) ? $items[$delta]['field_uconnect_license_properties_' . $index] : NULL,
+			) + $base;
+
+		}
+
+	}
+	return $element;
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function field_uconnect_license_field_formatter_info() {
+	return array(
+		'field_uconnect_license_default' => array(
+			'label' => t('Link to License'),
+			'field types' => array('field_uconnect_license'),
+		),
+		'field_uconnect_license_json' => array(
+			'label' => t('JSON'),
+			'field types' => array('field_uconnect_license'),
+		),
+	);
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function field_uconnect_license_field_formatter_view($obj_type, $object, $field, $instance, $langcode, $items, $display) {
+	$element = array();
+
+	switch ($display['type']) {
+		case 'field_uconnect_license_json' :
+			foreach ($items as $delta => $item) {
+				$element[$delta] = array(
+					'#theme' => 'field_uconnect_license_json',
+					'#element' => $item,
+					'#field' => $instance,
+					'#display' => $display,
+				);
+			}
+			break;
+		case 'field_uconnect_license_default' :
+			foreach ($items as $delta => $item) {
+				$element[$delta] = array(
+					'#theme' => 'field_uconnect_license_default',
+					'#element' => $item,
+					'#field' => $instance,
+					'#display' => $display,
+				);
+			}
+			break;
+	}
+	return $element;
+}
+
+/**
+ * Formats as json.
+ */
+function theme_field_uconnect_license_json($vars) {
+	$data = $vars['element'];
+	$item = array();
+	$item['key'] = 'name';
+	$item['value'] = $vars['element']['field_uconnect_license_name'];
+	if (!empty($vars['element']['field_uconnect_license_url'])) {
+		$item['attributes'] = array('URL' => $vars['element']['field_uconnect_license_url']);
+	}
+	else {
+		$item['attributes'] = array();
+	}
+
+	$items[] = $item;
+
+	//properties
+	for ($index = 1; $index <= 5; $index++) {
+		if (!empty($vars['element']['field_uconnect_license_properties_' . $index])) {
+			$item = array();
+			$item['key'] = 'property';
+			$item['value'] = $vars['element']['field_uconnect_license_properties_' . $index];
+			$item['attributes'] = array();
+
+			$items[] = $item;
+		}
+	}
+
+	// explanations
+	if (!empty($vars['element']['field_uconnect_license_explanation'])) {
+		$item = array();
+		$item['key'] = 'explanation';
+		$item['value'] = $vars['element']['field_uconnect_license_explanation'];
+		$item['attributes'] = array();
+
+		$items[] = $item;
+	}
+
+	return json_encode($items);
+}
+
+function theme_field_uconnect_license_default($vars) {
+	$data = $vars['element'];
+	unset($data['field_uconnect_license_name']);
+	unset($data['field_uconnect_license_url']);
+
+	if (isset($link_options['attributes']['class'])) {
+		$link_options['attributes']['class'] = array($link_options['attributes']['class']);
+	}
+	// Display a normal link if both title and URL are available.
+	if (!empty($vars['element']['field_uconnect_license_name']) && !empty($vars['element']['field_uconnect_license_url'])) {
+		return l($vars['element']['field_uconnect_license_name'], $vars['element']['field_uconnect_license_url'], $data);
+	}
+	// If only a title, display the title.
+	elseif (!empty($vars['element']['field_uconnect_license_name'])) {
+		return $data['html'] ? $vars['element']['field_uconnect_licence_name'] : check_plain($vars['element']['field_uconnect_license_name']);
+	}
+	elseif (!empty($vars['element']['field_uconnect_license_url'])) {
+		return l($vars['element']['field_uconnect_licence_name'], $vars['element']['field_uconnect_license_url'], $data);
+	}
+}
+
+function _field_uconnect_license_properties_options_list($field = NULL, $instance = NULL) {
+	$data = variable_get('uconnect_license_properties_master');
+	$a_temp = array();
+	foreach ($data as $index => $values) {
+		$a_temp[$index] = $values['name'];
+		if (is_array($values['children']) && count($values['children'] != 0)) {
+			foreach ($values['children'] as $index2 => $values2) {
+				$a_temp[$index2] = '-' . $values2['name'];
+
+				if (is_array($values2['children']) && count($values2['children'] != 0)) {
+					foreach ($values2['children'] as $index3 => $values3) {
+						$a_temp[$index3] = '--' . $values3['name'];
+					}
+				}
+			}
+		}
+	}
+	return array_merge(array('' => ''), $a_temp);
+}
+
+/**
+ * Defines info for the properties of the license field data structure.
+ */
+
+function field_uconnect_license_data_property_info($name = NULL) {
+	// Build an array of basic property information for the license
+	$properties = array(
+		'field_uconnect_license_name' => array('label' => t('License name'), ),
+		'field_uconnect_license_url' => array('label' => t('License URL'), ),
+		'field_uconnect_license_explanation' => array('label' => t('License explanation'), ),
+		'field_uconnect_license_properties_1' => array('label' => t('License property 1'), ),
+		'field_uconnect_license_properties_2' => array('label' => t('License property 2'), ),
+		'field_uconnect_license_properties_3' => array('label' => t('License property 3'), ),
+		'field_uconnect_license_properties_4' => array('label' => t('License property 4'), ),
+		'field_uconnect_license_properties_5' => array('label' => t('License property 5'), ),
+	);
+
+	// Add the default values for each of the license field properties.
+	foreach ($properties as $key => &$value) {
+		$value += array(
+			'description' => !empty($name) ? t('!label of field %name', array(
+				'!label' => $value['label'],
+				'%name' => $name
+			)) : '',
+			'type' => 'text',
+			'getter callback' => 'entity_property_verbatim_get',
+			'setter callback' => 'entity_property_verbatim_set',
+		);
+	}
+
+	return $properties;
+}

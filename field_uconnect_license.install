@@ -1,0 +1,45 @@
+<?php
+/**
+ * @file
+ * Install, update, and uninstall functions for the field_uconnect_education_level module.
+ */
+
+/**
+ * Implements hook_field_schema().
+ */
+function field_uconnect_license_field_schema($field) {
+	if ($field['type'] == 'field_uconnect_license') {
+		$schema['columns']['field_uconnect_license_name'] = array(
+			'type' => 'varchar',
+			'length' => 255,
+			'not null' => FALSE,
+		);
+		$schema['columns']['field_uconnect_license_url'] = array(
+			'type' => 'varchar',
+			'length' => 255,
+			'not null' => FALSE,
+		);
+		$schema['columns']['field_uconnect_license_explanation'] = array(
+			'type' => 'varchar',
+			'length' => 255,
+			'not null' => FALSE,
+		);
+
+		$schema['indexes'] = array(
+			'field_uconnect_license_name' => array('field_uconnect_license_name'),
+			'field_uconnect_license_url' => array('field_uconnect_license_url'),
+			'field_uconnect_license_explanation' => array('field_uconnect_license_explanation'),
+		);
+
+		for ($index = 1; $index <= 5; $index++) {
+			$schema['columns']['field_uconnect_license_properties_' . $index] = array(
+				'type' => 'varchar',
+				'length' => 255,
+				'not null' => FALSE,
+			);
+			$schema['indexes']['field_uconnect_license_properties_' . $index] = array('field_uconnect_license_properties_' . $index);
+		}
+
+		return $schema;
+	}
+}

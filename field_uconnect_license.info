@@ -1,0 +1,6 @@
+name = Field UCARConnect License
+description = Provides ability to include licensing information in format required by UCARConnect repository
+
+package = "UCARConnect"
+version = "7.x-1.0"
+core = 7.x
